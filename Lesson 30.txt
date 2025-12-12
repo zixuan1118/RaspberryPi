@@ -1,0 +1,55 @@
+import cv2
+import os
+
+IMAGE_PATH = "/home/wintermute/square.jpeg"
+
+RECT = 0
+HEXAGON = 1
+
+if not os.path.exists(IMAGE_PATH):
+    print(f"Error: image file '{IMAGE_PATH}' not found.")
+    exit()
+
+frame = cv2.imread(IMAGE_PATH)
+if frame is None:
+    print("Error: failed to read image.")
+    exit()
+
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+edged = cv2.Canny(gray, 50, 150)
+edged = cv2.dilate(edged, None, iterations=1)
+
+contours, hierarchy = cv2.findContours(
+    edged,
+    cv2.RETR_EXTERNAL,
+    cv2.CHAIN_APPROX_SIMPLE
+)
+
+if len(contours) < 2:
+    print(f"Error: expected at least 2 contours, found {len(contours)}.")
+    exit()
+
+contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+print("=== Before approximation ===")
+print("Rectangle points:", len(contours[RECT]))
+print("Hexagon points:", len(contours[HEXAGON]))
+
+epsilon_rect = 30
+epsilon_hex = 30
+
+approx_rect = cv2.approxPolyDP(contours[RECT], epsilon_rect, True)
+approx_hex = cv2.approxPolyDP(contours[HEXAGON], epsilon_hex, True)
+
+print("=== After approximation ===")
+print("Rectangle points:", len(approx_rect))
+print("Hexagon points:", len(approx_hex))
+
+out = frame.copy()
+cv2.drawContours(out, [approx_rect], -1, (0, 0, 255), 5)
+cv2.drawContours(out, [approx_hex], -1, (0, 0, 255), 5)
+
+OUTPUT_PATH = "output_polygon.png"
+cv2.imwrite(OUTPUT_PATH, out)
+print(f"Output image saved as {OUTPUT_PATH}")

@@ -1,0 +1,41 @@
+from ultralytics import YOLO
+import os
+import cv2
+import matplotlib.pyplot as plt
+
+save_dir = "results"
+os.makedirs(save_dir, exist_ok=True)
+
+model = YOLO("yolov8n.pt")
+
+image_path = "/home/wintermute/Downloads/testing.jpg"
+
+if not os.path.exists(image_path):
+    print("ERROR:/home/wintermute/Downloads/testing.jpg  not found. Please place an image in the same folder.")
+    raise SystemExit
+
+results = model(image_path)
+
+annotated_img = results[0].plot()
+
+plt.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
+plt.axis("off")
+plt.show()
+
+save_path = os.path.join(save_dir, "detected_image.jpg")
+cv2.imwrite(save_path, annotated_img)
+print("Saved result to:", save_path)
+
+detected_classes = set()
+
+for box in results[0].boxes:
+    cls_id = int(box.cls[0])
+    class_name = model.names[cls_id]
+    detected_classes.add(class_name)
+
+print("Detected classes:")
+if len(detected_classes) == 0:
+    print("None")
+else:
+    for cls in detected_classes:
+        print("-", cls)

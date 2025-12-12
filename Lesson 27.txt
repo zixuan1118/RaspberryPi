@@ -1,0 +1,79 @@
+import cv2
+import numpy as np
+import os
+
+IMAGE_PATH = "/home/wintermute/image/image2.jpeg"
+
+if not os.path.exists(IMAGE_PATH):
+    print(f"Error: image file '{IMAGE_PATH}' not found.")
+    exit()
+
+image = cv2.imread(IMAGE_PATH)
+if image is None:
+    print("Error: failed to read image.")
+    exit()
+
+origin = image.copy()
+
+sift_feature = None
+surf_feature = None
+
+try:
+    sift_feature = cv2.SIFT_create()
+except AttributeError:
+    try:
+        sift_feature = cv2.xfeatures2d.SIFT_create()
+    except Exception:
+        print("Warning: SIFT is not available in this OpenCV build.")
+
+try:
+    surf_feature = cv2.xfeatures2d.SURF_create()
+except Exception:
+    print("Warning: SURF is not available in this OpenCV build.")
+try:
+    orb_feature = cv2.ORB_create()
+except Exception:
+    orb_feature = None
+    print("Warning: ORB is not available in this OpenCV build.")
+
+if sift_feature is not None:
+    sift_kp = sift_feature.detect(image, None)
+    sift_out = cv2.drawKeypoints(image, sift_kp, None)
+else:
+    sift_out = image.copy()
+    cv2.putText(sift_out, "SIFT not available", (10, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+
+if surf_feature is not None:
+    surf_kp = surf_feature.detect(image, None)
+    surf_out = cv2.drawKeypoints(image, surf_kp, None)
+else:
+    surf_out = image.copy()
+    cv2.putText(surf_out, "SURF not available", (10, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+
+if orb_feature is not None:
+    orb_kp = orb_feature.detect(image, None)
+    orb_out = cv2.drawKeypoints(image, orb_kp, None)
+else:
+    orb_out = image.copy()
+    cv2.putText(orb_out, "ORB not available", (10, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+
+font = cv2.FONT_HERSHEY_SIMPLEX
+loc = (10, 40)
+color = (0, 0, 255)
+
+cv2.putText(origin,   "origin", loc, font, 1, color, 2, cv2.LINE_AA)
+cv2.putText(sift_out, "sift",   loc, font, 1, color, 2, cv2.LINE_AA)
+cv2.putText(surf_out, "surf",   loc, font, 1, color, 2, cv2.LINE_AA)
+cv2.putText(orb_out,  "orb",    loc, font, 1, color, 2, cv2.LINE_AA)
+
+top_row = cv2.hconcat([origin, sift_out])
+bottom_row = cv2.hconcat([surf_out, orb_out])
+grid = cv2.vconcat([top_row, bottom_row])
+
+cv2.namedWindow("features", cv2.WINDOW_NORMAL)
+cv2.imshow("features", grid)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

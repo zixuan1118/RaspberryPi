@@ -1,0 +1,47 @@
+import cv2
+import os
+
+IMG1_PATH = "/home/wintermute/image5.jpeg"
+IMG2_PATH = "/home/wintermute/image6.jpeg"
+
+if not os.path.exists(IMG1_PATH) or not os.path.exists(IMG2_PATH):
+    print("Error: image file not found.")
+    exit()
+
+img1 = cv2.imread(IMG1_PATH)
+img2 = cv2.imread(IMG2_PATH)
+
+if img1 is None or img2 is None:
+    print("Error: failed to read one of the images.")
+    exit()
+
+orb = cv2.ORB_create(nfeatures=2000)
+
+kp1, des1 = orb.detectAndCompute(img1, None)
+kp2, des2 = orb.detectAndCompute(img2, None)
+
+if des1 is None or des2 is None:
+    print("Error: no descriptors found.")
+
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+matches = bf.match(des1, des2)
+
+matches = sorted(matches, key=lambda x: x.distance)
+
+img3 = cv2.drawMatches(
+    img1, kp1,
+    img2, kp2,
+    matches[:10],
+    None,
+    flags=cv2.DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS
+)
+
+h, w, c = img3.shape
+ratio = float(h) / float(w)
+new_width = 1024
+new_height = int(new_width * ratio)
+img3 = cv2.resize(img3, (new_width, new_height))
+
+cv2.imshow("image", img3)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
